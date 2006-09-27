@@ -162,49 +162,47 @@ output (FILE *fp, const st_file_t *file)
 int
 output_sql (const st_file_t *file)
 {
-#if 0
   st_hash_t *h = NULL;
-  int items = rsstool_get_item_count (rt);
   int i = 0;
 
-  fputs ("--------------------------------------------------------------\n"
-         "-- RSStool - read, parse, merge and write RSS (and Atom) feeds\n"
-         "--------------------------------------------------------------\n"
+  fputs ("---------------------------------------------------------------------------------\n"
+         "-- flc - create BBS-style file lists with FILE_ID.DIZ found in archives and files\n"
+         "---------------------------------------------------------------------------------\n"
          "\n"
          "-- DROP TABLE IF EXISTS `flc_table`;\n"
          "-- CREATE TABLE IF NOT EXISTS `flc_table`\n"
          "-- (\n"
          "--   `flc_md5`        varchar(255),\n"
          "--   `flc_fname`      longtext,\n"
+         "--   `flc_size`       varchar(255),\n"
+         "--   `flc_checked`    varchar(3),\n"
          "--   `flc_date`       varchar(255),\n"
-         "--   `flc_desc`       longtext,\n"
+         "--   `flc_file_id`    longtext,\n"
          "--   `flc_date_added` varchar(255),\n"
          "--   UNIQUE KEY       `flc_md5` (`flc_md5`)\n"
          "-- );\n"
          "\n", stdout);
 
-//  for (; i < items; i++)
   for (i = 0; i < flc.files; i++)
     {
       h = hash_open (HASH_MD5);
-      h = hash_update (h, (const unsigned char *) rt->item[i].url, strlen (rt->item[i].url));
-//      h = hash_update (h, (const unsigned char *) rt->item[i].title, strlen (rt->item[i].title));
+      h = hash_update (h, (const unsigned char *) file[i].fname, strlen (file[i].fname));
+      h = hash_update (h, (const unsigned char *) file[i].checked, sizeof (int));
 
-      printf ("INSERT INTO `flc_table` (`flc_feed_md5`, `flc_site`, `flc_feed_url`, `flc_title`, `flc_url`, `flc_date`, `flc_desc`, `flc_date_added`)"
-              " VALUES ('%s', '%s', '%s', '%s', '%s', '%ld', '%s', '%ld')"
+      printf ("INSERT INTO `flc_table` (`flc_md5`, `flc_fname`, `flc_size`, `flc_checked`, `flc_date`, `flc_file_id`, `flc_date_added`)"
+              " VALUES ('%s', '%s', '%ld', '%ld', '%ld', '%s', '%ld')"
               ";\n",
         hash_get_s (h, HASH_MD5),
-        sql_escape_string (rt->item[i].site),
-        sql_escape_string (rt->item[i].feed_url),
-        sql_escape_string (rt->item[i].title),
-        sql_escape_string (rt->item[i].url),
-        rt->item[i].date,
-        sql_escape_string (rt->item[i].desc),
+        sql_escape_string (file[i].fname),
+        file[i].size,
+        file[i].checked,
+        file[i].date,
+        sql_escape_string (file[i].fname),
         time (0));
 
       hash_close (h);
     }
-#endif
+
   return 0;
 }
 

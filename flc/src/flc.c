@@ -144,6 +144,7 @@ main (int argc, char *argv[])
     {NULL,      0, 0, 0, NULL,
       "flc " FLC_VERSION_S " " CURRENT_OS_S " 1999-2006 by NoisyB\n"
       "This may be freely redistributed under the terms of the GNU Public License\n\n"
+      "create BBS-style file lists with FILE_ID.DIZ found in archives and files\n\n"
       "Usage: flc [OPTION]... [FILE]...\n", NULL},
     {"t",       0, 0, 't', NULL,   "sort by modification time", (void *) (FLC_SORT|FLC_DATE)},
     {"X",       0, 0, 'X', NULL,   "sort alphabetical", (void *) (FLC_SORT|FLC_NAME)},

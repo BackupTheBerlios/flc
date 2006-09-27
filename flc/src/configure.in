@@ -190,6 +190,15 @@ st_configure_in_t configure_in[] = {
     NULL
   },
 #endif
+  {
+    {NULL},
+    {NULL},
+    {NULL},
+    NULL,
+    "#define USE_MD5\n",
+    NULL,
+    NULL
+  },
 #if 0
   {
     {NULL},
