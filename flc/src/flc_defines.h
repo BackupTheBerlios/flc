@@ -26,21 +26,23 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //#define FLC_MAX_FILES 32768
 #define FLC_MAX_FILES 2048
 #define FLC_ID_NAMES "*_Id.* *_iD.* *_ID.* *_id.* FILE_ID.DIZ file_id.diz File_id.diz File_Id.Diz [Ff][Ii][Ll][Ee]_[Ii][Dd].[Dd][Ii][Zz]"
-#define FLC_VERSION_S "1.4.1"
+#define FLC_VERSION_S "1.4.2"
 //#define FLC_VERSION 121
 #define FLC_CONFIG_VERSION 121
 
 
-#define FLC_KBYTE 1
-#define FLC_CHECK (1 << 1)
-#define FLC_HTML  (1 << 2)
-#define FLC_BBS   (1 << 3)
-#define FLC_SORT  (1 << 4)
-#define FLC_DATE  (1 << 5)
-#define FLC_SIZE  (1 << 6)
-#define FLC_NAME  (1 << 7)
-#define FLC_FR    (1 << 8)
-#define FLC_RECURSIVE (1 << 9)
+#define FLC_KBYTE     1
+#define FLC_CHECK     (1<<1)
+#define FLC_HTML      (1<<2)
+#define FLC_BBS       (1<<3)
+#define FLC_SORT      (1<<4)
+#define FLC_DATE      (1<<5)
+#define FLC_SIZE      (1<<6)
+#define FLC_NAME      (1<<7)
+#define FLC_FR        (1<<8)
+#define FLC_RECURSIVE (1<<9)
+#define FLC_SQL       (1<<10)
+
 
 enum
 {

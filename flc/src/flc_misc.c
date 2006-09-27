@@ -38,6 +38,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include "misc/itypes.h"
 #include "misc/file.h"
 #include "misc/filter.h"
+#include "misc/hash.h"
 #include "misc/property.h"
 #include "misc/string.h"
 #include "flc.h"
@@ -154,6 +155,56 @@ output (FILE *fp, const st_file_t *file)
   else
     fprintf (fp, "%-45.45s\n", basename2 (file->fname));
 
+  return 0;
+}
+
+
+int
+output_sql (const st_file_t *file)
+{
+#if 0
+  st_hash_t *h = NULL;
+  int items = rsstool_get_item_count (rt);
+  int i = 0;
+
+  fputs ("--------------------------------------------------------------\n"
+         "-- RSStool - read, parse, merge and write RSS (and Atom) feeds\n"
+         "--------------------------------------------------------------\n"
+         "\n"
+         "-- DROP TABLE IF EXISTS `flc_table`;\n"
+         "-- CREATE TABLE IF NOT EXISTS `flc_table`\n"
+         "-- (\n"
+         "--   `flc_md5`        varchar(255),\n"
+         "--   `flc_fname`      longtext,\n"
+         "--   `flc_date`       varchar(255),\n"
+         "--   `flc_desc`       longtext,\n"
+         "--   `flc_date_added` varchar(255),\n"
+         "--   UNIQUE KEY       `flc_md5` (`flc_md5`)\n"
+         "-- );\n"
+         "\n", stdout);
+
+//  for (; i < items; i++)
+  for (i = 0; i < flc.files; i++)
+    {
+      h = hash_open (HASH_MD5);
+      h = hash_update (h, (const unsigned char *) rt->item[i].url, strlen (rt->item[i].url));
+//      h = hash_update (h, (const unsigned char *) rt->item[i].title, strlen (rt->item[i].title));
+
+      printf ("INSERT INTO `flc_table` (`flc_feed_md5`, `flc_site`, `flc_feed_url`, `flc_title`, `flc_url`, `flc_date`, `flc_desc`, `flc_date_added`)"
+              " VALUES ('%s', '%s', '%s', '%s', '%s', '%ld', '%s', '%ld')"
+              ";\n",
+        hash_get_s (h, HASH_MD5),
+        sql_escape_string (rt->item[i].site),
+        sql_escape_string (rt->item[i].feed_url),
+        sql_escape_string (rt->item[i].title),
+        sql_escape_string (rt->item[i].url),
+        rt->item[i].date,
+        sql_escape_string (rt->item[i].desc),
+        time (0));
+
+      hash_close (h);
+    }
+#endif
   return 0;
 }
 

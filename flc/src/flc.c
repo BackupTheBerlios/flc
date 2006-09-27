@@ -152,6 +152,7 @@ main (int argc, char *argv[])
     {"k",       0, 0, 'k', NULL,   "show sizes in kilobytes", (void *) FLC_KBYTE},
     {"bbs",     0, 0, 4,   NULL,   "output as BBS style filelisting (default)", (void *) FLC_BBS},
     {"html",    0, 0, 3,   NULL,   "output as HTML document with links to the files", (void *) FLC_HTML},
+    {"sql",     0, 0, 5,   NULL,   "output as ANSI SQL script", (void *) FLC_SQL},
     {"o",       1, 0, 'o', "FILE", "write output into FILE", NULL},
     {"c",       0, 0, 'c', NULL,   "also check every archive for errors\n"
                                    "return flags: N=not checked (default), P=passed, F=failed",
@@ -189,6 +190,7 @@ main (int argc, char *argv[])
   while ((c = getopt_long_only (argc, argv, short_options, long_only_options, &option_index)) != -1)
     switch (c)
       {
+        case 5:
         case 4:
         case 't':
         case 'X':
@@ -265,13 +267,20 @@ main (int argc, char *argv[])
   if (!fh)
     fh = stdout;
 
-  if (flc.flags & FLC_HTML)
-    fprintf (fh, "<html><head><title></title></head><body><pre><tt>");
+  if (flc.flags & FLC_SQL)
+    {
+      output_sql (file);
+    }
+  else
+    {
+      if (flc.flags & FLC_HTML)
+        fprintf (fh, "<html><head><title></title></head><body><pre><tt>");
 
-  for (x = 0; x < flc.files; output (fh, &file[x++]));
+      for (x = 0; x < flc.files; output (fh, &file[x++]));
 
-  if (flc.flags & FLC_HTML)
-    fprintf (fh, "</pre></tt></body></html>\n");
+      if (flc.flags & FLC_HTML)
+        fprintf (fh, "</pre></tt></body></html>\n");
+    }
 
   if (fh != stdout)
     fclose (fh);
