@@ -41,6 +41,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include "misc/hash.h"
 #include "misc/property.h"
 #include "misc/string.h"
+#include "misc/sql.h"
 #include "flc.h"
 #include "flc_misc.h"
 #include "flc_defines.h"
@@ -163,7 +164,9 @@ int
 output_sql (const st_file_t *file)
 {
   st_hash_t *h = NULL;
-  int i = 0;
+  int i = 0, j = 0;
+  st_file_t f;
+  char buf[FLC_MAX_ID_ROWS * (FLC_MAX_ID_COLS + 1)];
 
   fputs ("---------------------------------------------------------------------------------\n"
          "-- flc - create BBS-style file lists with FILE_ID.DIZ found in archives and files\n"
@@ -172,32 +175,43 @@ output_sql (const st_file_t *file)
          "-- DROP TABLE IF EXISTS `flc_table`;\n"
          "-- CREATE TABLE IF NOT EXISTS `flc_table`\n"
          "-- (\n"
-         "--   `flc_md5`        varchar(255),\n"
-         "--   `flc_fname`      longtext,\n"
-         "--   `flc_size`       varchar(255),\n"
+         "--   `flc_md5`        varchar(32),\n"
+         "--   `flc_fname`      text,\n"
+         "--   `flc_size`       int(32),\n"
          "--   `flc_checked`    varchar(3),\n"
-         "--   `flc_date`       varchar(255),\n"
+         "--   `flc_date`       int(11),\n"
          "--   `flc_file_id`    longtext,\n"
-         "--   `flc_date_added` varchar(255),\n"
+         "--   `flc_date_added` int(11),\n"
          "--   UNIQUE KEY       `flc_md5` (`flc_md5`)\n"
          "-- );\n"
          "\n", stdout);
 
   for (i = 0; i < flc.files; i++)
     {
+      memcpy (&f, &file[i], sizeof (st_file_t));
+
+      if (f.file_id[0][0])
+        { 
+          *buf = 0;
+          for (j = 0; f.file_id[j][0]; j++)
+            sprintf (strchr (buf, 0), "%-45.45s\n", f.file_id[j]);
+        }
+      else
+        sprintf (buf, "%-45.45s\n", basename2 (file->fname));
+
       h = hash_open (HASH_MD5);
-      h = hash_update (h, (const unsigned char *) file[i].fname, strlen (file[i].fname));
-      h = hash_update (h, (const unsigned char *) file[i].checked, sizeof (int));
+      h = hash_update (h, (const unsigned char *) f.fname, strlen (file[i].fname));
+//      h = hash_update (h, (const unsigned char *) f.checked, sizeof (int));
 
       printf ("INSERT INTO `flc_table` (`flc_md5`, `flc_fname`, `flc_size`, `flc_checked`, `flc_date`, `flc_file_id`, `flc_date_added`)"
-              " VALUES ('%s', '%s', '%ld', '%ld', '%ld', '%s', '%ld')"
+              " VALUES ('%s', '%s', '%ld', '%c', '%ld', '%s', '%ld')"
               ";\n",
         hash_get_s (h, HASH_MD5),
-        sql_escape_string (file[i].fname),
-        file[i].size,
-        file[i].checked,
-        file[i].date,
-        sql_escape_string (file[i].fname),
+        sql_escape_string (f.fname),
+        f.size,
+        f.checked,
+        f.date,
+        sql_escape_string (buf),
         time (0));
 
       hash_close (h);

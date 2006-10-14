@@ -164,7 +164,9 @@ const char *
 hash_get_s (st_hash_t *h, int flag)
 {
   int i = 0;
+#if      (defined USE_MD4 || defined USE_SHA1)
   unsigned char tmp[32];
+#endif
 
   if (!(h->flags & flag))
     return NULL;
