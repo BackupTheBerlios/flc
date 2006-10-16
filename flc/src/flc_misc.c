@@ -176,13 +176,15 @@ output_sql (const st_file_t *file)
          "-- CREATE TABLE IF NOT EXISTS `flc_table`\n"
          "-- (\n"
          "--   `flc_md5`        varchar(32),\n"
+         "--   `flc_crc32`      varchar(32),\n"
          "--   `flc_fname`      text,\n"
          "--   `flc_size`       int(32),\n"
          "--   `flc_checked`    varchar(3),\n"
          "--   `flc_date`       int(11),\n"
          "--   `flc_file_id`    longtext,\n"
          "--   `flc_date_added` int(11),\n"
-         "--   UNIQUE KEY       `flc_md5` (`flc_md5`)\n"
+         "--   UNIQUE KEY       `flc_md5` (`flc_md5`),\n"
+         "--   UNIQUE KEY       `flc_crc32` (`flc_crc32`)\n"
          "-- );\n"
          "\n", stdout);
 
@@ -199,14 +201,14 @@ output_sql (const st_file_t *file)
       else
         sprintf (buf, "%-45.45s\n", basename2 (file->fname));
 
-      h = hash_open (HASH_MD5);
+      h = hash_open (HASH_MD5|HASH_CRC32);
       h = hash_update (h, (const unsigned char *) f.fname, strlen (file[i].fname));
-//      h = hash_update (h, (const unsigned char *) f.checked, sizeof (int));
 
-      printf ("INSERT INTO `flc_table` (`flc_md5`, `flc_fname`, `flc_size`, `flc_checked`, `flc_date`, `flc_file_id`, `flc_date_added`)"
-              " VALUES ('%s', '%s', '%ld', '%c', '%ld', '%s', '%ld')"
+      printf ("INSERT INTO `flc_table` (`flc_md5`, `flc_crc32`, `flc_fname`, `flc_size`, `flc_checked`, `flc_date`, `flc_file_id`, `flc_date_added`)"
+              " VALUES ('%s', '%x', '%s', '%ld', '%c', '%ld', '%s', '%ld')"
               ";\n",
         hash_get_s (h, HASH_MD5),
+        hash_get_crc32 (h),
         sql_escape_string (f.fname),
         f.size,
         f.checked,
@@ -376,7 +378,7 @@ extract (st_file_t *file, const char *fname)
   file->checked = 'N';
   file->date = puffer.st_mtime;
   file->size = puffer.st_size;
-  strcpy (file->fname, fname);
+  strncpy (file->fname, fname, FILENAME_MAX)[FILENAME_MAX - 1] = 0;
   if (flc.flags & FLC_CHECK)
     {
       // test with configfile

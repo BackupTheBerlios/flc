@@ -199,6 +199,15 @@ st_configure_in_t configure_in[] = {
     NULL,
     NULL
   },
+  {
+    {NULL},
+    {NULL},
+    {NULL},
+    NULL,
+    "#define USE_CRC\n",
+    NULL,
+    NULL
+  },
 #if 0
   {
     {NULL},

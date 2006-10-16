@@ -8,8 +8,8 @@ include config.mak
 TARGET=flc
 OBJECTS=flc.o flc_misc.o filter/id3.o filter/met.o filter/txt.o \
 	misc/file.o misc/filter.o misc/getopt.o misc/getopt2.o \
-	misc/hash.o misc/hash_md5.o misc/misc.o misc/property.o \
-	misc/sql.o misc/string.o
+	misc/hash.o misc/hash_crc.o misc/hash_md5.o misc/misc.o \
+	misc/property.o misc/sql.o misc/string.o
 
 all: $(TARGET)
 
