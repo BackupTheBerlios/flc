@@ -270,7 +270,7 @@ main (int argc, char *argv[])
 
   if (flc.flags & FLC_SQL)
     {
-      output_sql (file);
+      output_sql (fh, file);
     }
   else
     {

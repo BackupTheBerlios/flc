@@ -161,7 +161,7 @@ output (FILE *fp, const st_file_t *file)
 
 
 int
-output_sql (const st_file_t *file)
+output_sql (FILE *fp, const st_file_t *file)
 {
   st_hash_t *h = NULL;
   int i = 0, j = 0;
@@ -186,7 +186,7 @@ output_sql (const st_file_t *file)
          "--   UNIQUE KEY       `flc_md5` (`flc_md5`),\n"
          "--   UNIQUE KEY       `flc_crc32` (`flc_crc32`)\n"
          "-- );\n"
-         "\n", stdout);
+         "\n", fp);
 
   for (i = 0; i < flc.files; i++)
     {
@@ -204,9 +204,9 @@ output_sql (const st_file_t *file)
       h = hash_open (HASH_MD5|HASH_CRC32);
       h = hash_update (h, (const unsigned char *) f.fname, strlen (file[i].fname));
 
-      printf ("INSERT INTO `flc_table` (`flc_md5`, `flc_crc32`, `flc_fname`, `flc_size`, `flc_checked`, `flc_date`, `flc_file_id`, `flc_date_added`)"
-              " VALUES ('%s', '%x', '%s', '%ld', '%c', '%ld', '%s', '%ld')"
-              ";\n",
+      fprintf (fp, "INSERT INTO `flc_table` (`flc_md5`, `flc_crc32`, `flc_fname`, `flc_size`, `flc_checked`, `flc_date`, `flc_file_id`, `flc_date_added`)"
+               " VALUES ('%s', '%x', '%s', '%ld', '%c', '%ld', '%s', '%ld')"
+               ";\n",
         hash_get_s (h, HASH_MD5),
         hash_get_crc32 (h),
         sql_escape_string (f.fname),
