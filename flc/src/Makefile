@@ -26,10 +26,10 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 
 install: all
-	cp $(TARGET) $(prefix)/bin
+	cp $(TARGET) $(DESTDIR)$(BINDIR)/
 
 uninstall:
-	rm -f $(prefix)/bin/$(TARGET)
+	rm -f $(DESTDIR)$(BINDIR)/$(TARGET)
 
 # Dependencies
 
