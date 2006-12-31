@@ -72,6 +72,44 @@ typedef struct st_filter_t
 
   int (* init) (void *);
   int (* quit) (void *);
+
+#if 0
+  int (*getattr) (void *);
+  int (*readlink) (void *);
+  int (*getdir) (void *);
+  int (*mknod) (void *);
+  int (*mkdir) (void *);
+  int (*unlink) (void *);
+  int (*rmdir) (void *);
+  int (*symlink) (void *);
+  int (*rename) (void *);
+  int (*link) (void *);
+  int (*chmod) (void *);
+  int (*chown) (void *);
+  int (*truncate) (void *);
+  int (*utime) (void *);
+  int (*open) (void *);
+  int (*read) (void *);
+  int (*write) (void *);
+  int (*statfs) (void *);
+  int (*flush) (void *);
+  int (*release) (void *);
+  int (*fsync) (void *);
+  int (*setxattr) (void *);
+  int (*getxattr) (void *);
+  int (*listxattr) (void *);
+  int (*removexattr) (void *);
+  int (*opendir) (void *);
+  int (*readdir) (void *);
+  int (*releasedir) (void *);
+  int (*fsyncdir) (void *);
+  void *(*init) (void);
+  void (*destroy) (void *);
+  int (*access) (void *);
+  int (*create) (void *);
+  int (*ftruncate) (void *);
+  int (*fgetattr) (void *);
+#endif
 } st_filter_t;
 
 
@@ -138,6 +176,11 @@ typedef struct st_filter_chain_t
 
   NOTE: all wrappers will pass that (void *) argument to st_filter_t->(* func)()
 */
+#ifdef  DEBUG
+extern void filter_st_filter_chain_t_sanity_check (st_filter_chain_t *fc);
+#endif
+
+
 extern st_filter_chain_t *filter_malloc_chain (const st_filter_t **);
 extern int filter_set_chain (st_filter_chain_t *fc, const int *filter_id);
 //extern const int *filter_get_chain (st_filter_chain_t *fc);

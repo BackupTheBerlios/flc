@@ -54,6 +54,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <proto/lowlevel.h>
 #elif   defined _WIN32
 #include <windows.h>                            // Sleep(), milliseconds
+#include "misc/win32.h"
 #endif
 #ifdef  HAVE_DIRENT_H
 #include <dirent.h>
@@ -86,23 +87,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 // needed by realpath()
 extern int errno;
-
-
-static unsigned long
-time_ms (unsigned long *ms)
-// returns milliseconds since midnight
-{
-  unsigned long t = 0;
-  struct timeval tv;
-
-  if (!gettimeofday (&tv, NULL))
-    {
-      t = (unsigned long) (tv.tv_usec / 1000);
-      t += (unsigned long) ((tv.tv_sec % 86400) * 1000);
-    }
-
-  return ms ? *ms = t : t;
-}
 
 
 int
@@ -666,41 +650,40 @@ truncate2 (const char *filename, unsigned long new_size)
 
 
 char *
+tmpnam3 (char *temp, int dir)
+{
+  char *t = NULL, *p = NULL;
+
+  if (!temp)
+    return NULL;
+  
+  t = getenv2 ("TEMP");
+
+  if (!(p = malloc (strlen (t) + strlen (temp) + 12)))
+    return NULL;
+
+  sprintf (p, "%s" FILE_SEPARATOR_S "%st_XXXXXX", t, temp);
+  strcpy (temp, p);
+  free (p);
+
+  if (!dir)
+    if (mkstemp (temp) != -1)
+      return temp;
+
+  if (dir)
+    if (mkdtemp (temp))
+      return temp;
+
+  return NULL;
+}
+
+
+char *
 tmpnam2 (char *temp)
-// tmpnam() clone
+// deprecated
 {
-  char *p = getenv2 ("TEMP");
-
-  srand (time_ms (0));
-
-  *temp = 0;
-  while (!(*temp) || !access (temp, F_OK))      // must work for files AND dirs
-    sprintf (temp, "%s%s%08x.tmp", p, FILE_SEPARATOR_S, rand());
-
-  return temp;
+  return tmpnam3 (temp, 0);
 }
-
-
-#if 0
-// TODO: like tmpnam2() but create the file or directory so that no other process can take them
-const char *
-mktmpdir (char *path, int mode)
-{
-  (void) path;
-  (void) mode;
-//  path + dirname
-  return "";
-}
-
-
-const char *
-mktmpfile (char *path)
-{
-  (void) path;
-//  path + filename
-  return "";
-}
-#endif
 
 
 int
@@ -733,35 +716,55 @@ baknam (char *fname)
 }
 
 
-static int
-fcopy_func (void *buffer, int n, void *object)
-{
-  return fwrite (buffer, 1, n, (FILE *) object);
-}
-
-
 int
-fcopy (const char *src, size_t start, size_t len, const char *dest, const char *mode)
+fcopy (const char *source, size_t start, size_t len, const char *dest, const char *mode)
 {
-  FILE *output;
+  int buffer_size = 0;
+  unsigned char *buffer = NULL;
+  FILE *src = NULL, *dst = NULL;
   int result = 0;
 
-#ifdef  DEBUG
   if (!strchr ("aw", *mode))
-    fprintf (stderr, "ERROR: fcopy() (logically) supports only write or append as mode\n\n");
-#endif
+    {
+      fprintf (stderr, "ERROR: fcopy() (logically) supports only write or append as mode\n\n");
+      exit (1);
+    }
 
-  if (same_file (dest, src))                     // other code depends on this
-    return -1;                                  //  behaviour!
-
-  if (!(output = fopen (dest, mode)))
+  if (same_file (dest, source)) // do not copy a file over itself
     return -1;
 
-  fseek (output, 0, SEEK_END);
+  if (!(src = fopen (source, "rb")))
+    return -1;
 
-  result = quick_io_func (fcopy_func, MAXBUFSIZE, output, start, len, src);
+  if (len <= 5 * 1024 * 1024)                   // files up to 5 MB are loaded
+    if ((buffer = (unsigned char *) malloc (len)))   //  in their entirety
+      buffer_size = len;
 
-  fclose (output);
+  if (!buffer)                                  // default to MAXBUFSIZE
+    if ((buffer = (unsigned char *) malloc (MAXBUFSIZE)))
+      buffer_size = MAXBUFSIZE;
+
+  if (!buffer)
+    {
+      fclose (src);
+      return -1;
+    }
+
+  if (!(dst = fopen (dest, mode)))
+    {
+      fclose (src);
+      free (buffer);
+      return -1;
+    }
+
+  fseek (dst, 0, SEEK_END); // append
+
+  while ((result = fread (buffer, 1, buffer_size, src)))
+    fwrite (buffer, 1, result, dst);
+
+  fclose (dst);
+  fclose (src);
+  free (buffer);
 
   return result == -1 ? result : 0;
 }
@@ -784,6 +787,7 @@ quick_io_c (int value, size_t pos, const char *filename, const char *mode)
     result = fputc (value, fh);
 
   fclose (fh);
+
   return result;
 }
 
@@ -810,65 +814,6 @@ quick_io (void *buffer, size_t start, size_t len, const char *filename,
 
   fclose (fh);
   return result;
-}
-
-
-int
-quick_io_func (int (*func) (void *, int, void *), int func_maxlen, void *o,
-               size_t start, size_t len, const char *filename)
-{
-  void *buffer = NULL;
-  int buffer_size = 0, buffer_len = 0, buffer_pos = 0;
-  size_t pos = 0;
-  FILE *fh = NULL;
-  int result = 0;
-
-  if (!(fh = fopen (filename, "rb")))
-    {
-      free (buffer);
-      return -1;
-    }
-
-  if (len <= 5 * 1024 * 1024)                   // files up to 5 MB are loaded
-    if ((buffer = malloc (len)))                //  in their entirety
-      buffer_size = len;
-
-  if (!buffer)                                  // default to func_maxlen
-    if ((buffer = malloc (func_maxlen)))
-      buffer_size = func_maxlen;
-
-  if (!buffer)
-    return -1;
-
-  fseek (fh, start, SEEK_SET);
-
-  for (pos = 0; pos < len; pos += buffer_len)
-    {
-      buffer_len = fread (buffer, 1, buffer_size, fh);
-
-      while (buffer_pos < buffer_len)
-        {
-          int func_size = MIN (MIN (func_maxlen, buffer_len), buffer_len - buffer_pos);
-
-          result = func ((char *) buffer + buffer_pos, func_size, o);
-          buffer_pos += result;
-
-          if (result < func_size)  // this must be EOF or a problem (if in overwrite mode)
-            {
-              fclose (fh);
-              free (buffer);
-
-              // returns total bytes processed or if (func() < 0) it returns that error value
-              return buffer_pos < 0 ? buffer_pos : ((int) pos + buffer_pos);
-            }
-        }
-    }
-
-  fclose (fh);
-  free (buffer);
-
-  // returns total bytes processed or if (func() < 0) it returns that error value
-  return pos;
 }
 
 
@@ -931,14 +876,8 @@ getfile_recursion (const char *fname, int (*callback_func) (const char *),
       (flags & (GETFILE_RECURSIVE | GETFILE_RECURSIVE_ONCE)))
     {
       int result = 0; 
-#ifndef _WIN32
       struct dirent *ep;
       DIR *dp;
-#else
-      char search_pattern[FILENAME_MAX];
-      WIN32_FIND_DATA find_data;
-      HANDLE dp;
-#endif
       char buf[FILENAME_MAX], *p;
 
 #if     defined __MSDOS__ || defined _WIN32 || defined __CYGWIN__
@@ -952,7 +891,6 @@ getfile_recursion (const char *fname, int (*callback_func) (const char *),
       else
         p = FILE_SEPARATOR_S;
 
-#ifndef _WIN32
       if ((dp = opendir (path)))
         {
           while ((ep = readdir (dp)))
@@ -967,24 +905,6 @@ getfile_recursion (const char *fname, int (*callback_func) (const char *),
               }
           closedir (dp);
         }
-#else
-      sprintf (search_pattern, "%s%s*", path, p);
-      if ((dp = FindFirstFile (search_pattern, &find_data)) != INVALID_HANDLE_VALUE)
-        {
-          do
-            if (strcmp (find_data.cFileName, ".") != 0 &&
-                strcmp (find_data.cFileName, "..") != 0)
-              {
-                sprintf (buf, "%s%s%s", path, p, find_data.cFileName);
-                result = getfile_recursion (buf, callback_func, calls,
-                           flags & ~GETFILE_RECURSIVE_ONCE);
-                if (result != 0)
-                  break;
-              }
-          while (FindNextFile (dp, &find_data));
-          FindClose (dp);
-        }
-#endif
     }
 
   return 0;
@@ -1007,6 +927,7 @@ getfile (int argc, char **argv, int (*callback_func) (const char *), int flags)
 }
 
 
+#if 0
 int
 mkdir2 (const char *name)
 // create a directory and check its permissions
@@ -1087,4 +1008,32 @@ rmdir2 (const char *path)
 
 #endif
   return rmdir (path);
+}
+#endif
+
+
+unsigned char *
+fread2 (const char *filename, int maxlength)
+{
+  FILE *fh = NULL;
+  unsigned char *p = NULL;
+  int len = fsizeof (filename);
+
+  if (len > maxlength || len == -1)
+    return NULL;
+
+  if (!(fh = fopen (filename, "rb")))
+    return NULL;
+
+  if (!(p = (unsigned char *) malloc (len + 1)))
+    {
+      fclose (fh);
+      return NULL;
+    }
+
+  fread (p, len, 1, fh);
+
+  fclose (fh);
+
+  return p;
 }

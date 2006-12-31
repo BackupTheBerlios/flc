@@ -31,6 +31,27 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #define FLC_CONFIG_VERSION 121
 
 
+// options
+#if 0
+#define FLC_T 't'
+#define FLC_X 'X'
+#define FLC_S 'S'
+#define FLC_FR 2
+#define FLC_K 'k'
+#define FLC_BBS 4
+#define FLC_HTML 3
+#define FLC_SQL 5
+#define FLC_O 'o'
+#define FLC_C 'c'
+#define FLC_CACHE 'C'
+#define FLC_STATS 's'
+#define FLC_R 'R'
+#define FLC_VER 'v'
+#define FLC_HELP 'h'
+#endif
+
+
+// flags
 #define FLC_KBYTE     1
 #define FLC_CHECK     (1<<1)
 #define FLC_HTML      (1<<2)

@@ -141,35 +141,91 @@ main (int argc, char *argv[])
     {NULL, NULL, NULL}
   };
   const st_getopt2_t options[] = {
-    {NULL,      0, 0, 0, NULL,
+    {
+      NULL,      0, 0, 0, NULL,
       "flc " FLC_VERSION_S " " CURRENT_OS_S " 1999-2006 by NoisyB\n"
       "This may be freely redistributed under the terms of the GNU Public License\n\n"
       "create BBS-style file lists with FILE_ID.DIZ found in archives and files\n\n"
-      "Usage: flc [OPTION]... [FILE]...\n", NULL},
-    {"t",       0, 0, 't', NULL,   "sort by modification time", (void *) (FLC_SORT|FLC_DATE)},
-    {"X",       0, 0, 'X', NULL,   "sort alphabetical", (void *) (FLC_SORT|FLC_NAME)},
-    {"S",       0, 0, 'S', NULL,   "sort by byte size", (void *) (FLC_SORT|FLC_SIZE)},
-    {"fr",      0, 0, 2,   NULL,   "sort reverse", (void *) (FLC_SORT|FLC_FR)},
-    {"k",       0, 0, 'k', NULL,   "show sizes in kilobytes", (void *) FLC_KBYTE},
-    {"bbs",     0, 0, 4,   NULL,   "output as BBS style filelisting (default)", (void *) FLC_BBS},
-    {"html",    0, 0, 3,   NULL,   "output as HTML document with links to the files", (void *) FLC_HTML},
-    {"sql",     0, 0, 5,   NULL,   "output as ANSI SQL script", (void *) FLC_SQL},
-    {"o",       1, 0, 'o', "FILE", "write output into FILE", NULL},
-    {"c",       0, 0, 'c', NULL,   "also check every archive for errors\n"
-                                   "return flags: N=not checked (default), P=passed, F=failed",
-                                   (void *) FLC_CHECK},
-    {"cache",   1, 0, 'C', "CACHE", "get a default file_id.diz from CACHE filelisting\n"
-                                    "(searches for filename)", NULL},
-//    {"stats",   1, 0, 's', "LIST", "show stats of fileLISTing", NULL},
-    {"R",       0, 0, 'R', NULL,   "scan subdirectories recursively", (void *) FLC_RECURSIVE},
-    {"version", 0, 0, 'v', NULL,   "output version information and exit", NULL},
-    {"ver",     0, 0, 'v', NULL,   NULL, NULL},
-    {"help",    0, 0, 'h', NULL,   "display this help and exit", NULL},
-    {"h",       0, 0, 'h', NULL,   NULL, NULL},
-    {NULL,      0, 0, 0,   NULL,
-      "\nAmiga version: noC-flc Version v1.O (File-Listing Creator) - (C)1994 nocTurne deSign/MST\n"
-      "Report problems to ucon64-main@lists.sf.net or go to http://ucon64.sf.net\n", NULL},
-    {NULL,      0, 0, 0,   NULL,   NULL, NULL}
+      "Usage: flc [OPTION]... [FILE]...\n"
+    },
+    {
+      "t",       0, 0, 't',
+      NULL,      "sort by modification time"
+    },
+    {
+      "X",       0, 0, 'X',
+      NULL,      "sort alphabetical"
+    },
+    {
+      "S",       0, 0, 'S',
+      NULL,      "sort by byte size"
+    },
+    {
+      "fr",      0, 0, 2,
+      NULL,   "sort reverse"
+    },
+    {
+      "k",       0, 0, 'k',
+      NULL,   "show sizes in kilobytes"
+    },
+    {
+      "bbs",     0, 0, 4,
+      NULL,   "output as BBS style filelisting (default)"
+    },
+    {
+      "html",    0, 0, 3,
+      NULL,   "output as HTML document with links to the files"
+    },
+    {
+      "sql",     0, 0, 5,
+      NULL,   "output as ANSI SQL script"
+    },
+    {
+      "o",       1, 0, 'o',
+      "FILE", "write output into FILE"
+    },
+    {
+      "c",       0, 0, 'c',
+      NULL,   "also check every archive for errors\n"
+              "return flags: N=not checked (default), P=passed, F=failed"
+    },
+    {
+      "cache",   1, 0, 'C',
+      "CACHE", "get a default file_id.diz from CACHE filelisting\n"
+               "(searches for filename)"
+    },
+#if 0
+    {
+      "stats",   1, 0, 's',
+      "LIST", "show stats of fileLISTing"
+    },
+#endif
+    {
+      "R",       0, 0, 'R',
+      NULL,   "scan subdirectories recursively"
+    },
+    {
+      "version", 0, 0, 'v',
+      NULL,   "output version information and exit"
+    },
+    {
+      "ver",     0, 0, 'v',
+      NULL,   NULL
+    },
+    {
+      "help",    0, 0, 'h',
+      NULL,   "display this help and exit"
+    },
+    {
+      "h",       0, 0, 'h',
+      NULL,   NULL
+    },
+    {
+      NULL,      0, 0, 0,
+      NULL,      "\nAmiga version: noC-flc Version v1.O (File-Listing Creator) - (C)1994 nocTurne deSign/MST\n"
+                 "Report problems to ucon64-main@lists.sf.net or go to http://ucon64.sf.net\n"
+    },
+    {NULL, 0, 0, 0, NULL, NULL}
   };
 
   memset (&flc, 0, sizeof (st_flc_t));
@@ -192,23 +248,43 @@ main (int argc, char *argv[])
     switch (c)
       {
         case 5:
+          flc.flags |= FLC_SQL;
+          break;
+
         case 4:
+          flc.flags |= FLC_BBS;
+          break;
+
         case 't':
+          flc.flags |= (FLC_SORT|FLC_DATE);
+          break;
+
         case 'X':
+          flc.flags |= (FLC_SORT|FLC_NAME);
+          break;
+
         case 'S':
+          flc.flags |= (FLC_SORT|FLC_SIZE);
+          break;
+
         case 2:
+          flc.flags |= (FLC_SORT|FLC_FR);
+          break;
+
         case 'k':
+          flc.flags |= FLC_KBYTE;
+          break;
+
         case 3:
+          flc.flags |= FLC_HTML;
+          break;
+
         case 'c':
+          flc.flags |= FLC_CHECK;
+          break;
+
         case 'R':
-          p = getopt2_get_index_by_val (options, c);
-          if (p)
-            if (p->object)
-              {
-                flags = (uint32_t) p->object;
-                if (flags)
-                  flc.flags |= flags;
-              }
+          flc.flags |= FLC_RECURSIVE;
           break;
 
         case 'C':
@@ -240,6 +316,7 @@ main (int argc, char *argv[])
       exit (-1);
     }
 
+#warning tmpnam2 is deprecated
   if (tmpnam2 (path))
     {
       realpath2 (path, flc.temp);

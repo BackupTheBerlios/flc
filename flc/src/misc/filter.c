@@ -73,7 +73,7 @@ enum
 };
 
 
-#ifdef  TEST
+#ifdef  DEBUG
 void
 filter_st_filter_chain_t_sanity_check (st_filter_chain_t *fc)
 {
