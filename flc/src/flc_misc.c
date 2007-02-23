@@ -209,11 +209,11 @@ output_sql (FILE *fp, const st_file_t *file)
                ";\n",
         hash_get_s (h, HASH_MD5),
         hash_get_crc32 (h),
-        sql_escape_string (f.fname),
+        sql_stresc (f.fname),
         f.size,
         f.checked,
         f.date,
-        sql_escape_string (buf),
+        sql_stresc (buf),
         time (0));
 
       hash_close (h);

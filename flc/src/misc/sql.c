@@ -24,18 +24,75 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "string.h"
-#include "sql.h"
 #ifdef  USE_MYSQL
 #include "sql_mysql.h"
 #endif
 #ifdef  USE_ODBC
 #include "sql_odbc.h"
 #endif
+#ifdef  USE_PGSQL 
+#include <libpq-fe.h>
+#endif
+#include "sql.h"
+
+
+//#warning fix this!
+#if     (defined USE_ODBC || defined USE_MYSQL)
+int
+sql_free_array (st_sql_t *sql)
+{
+/*
+  int r = 0;
+
+  if (!sql->array)
+    return 0;
+
+  for (; sql->array[r]; r++)
+    {
+      free (sql->array[r]);
+      sql->array[r] = NULL;
+    }
+
+  free (sql->array);
+  sql->array = NULL;
+*/
+  return 0;
+}
+
+
+int
+sql_malloc_array (st_sql_t *sql, int rows, int cols)
+{
+/*
+  int r = 0;
+
+  if (sql->array)
+    sql_free_array (sql);
+
+  sql->array = (const char ***) malloc (rows * sizeof (const char **));
+  if (!sql->array)
+    return -1;
+
+  for (r = 0; r <= rows; r++)
+    {
+      sql->array[r] = (const char **) malloc (cols * sizeof (const char *));
+      if (!sql->array[r])
+        return -1;
+    }
+*/
+  return 0;
+}
+#endif
 
 
 char *
-sql_escape_string (char *s)
+sql_stresc (char *s)
 {
+//#ifdef  USE_MYSQL
+//  return mysql_escape_string (s);
+////  return mysql_real_escape_string(MYSQL *mysql, d, s, strlen (s));
+////#elif   define USE_ODBC
+//#else
 #if 1
  char *bak = strdup (s);
  char *p = bak;
@@ -60,7 +117,7 @@ sql_escape_string (char *s)
        case 34:  // quotes
        case 39:  // single quotes
        case 92:  // backslash
-         sprintf (d, "\\\%c", *p);
+         sprintf (d, "\\%c", *p);
          d = strchr (d, 0);
          break;
 
@@ -81,6 +138,7 @@ sql_escape_string (char *s)
   strrep (s, "\'", "\\\'");
   strrep (s, "\\", "\\");
 #endif
+//#endif
 
   return s;
 }
@@ -89,8 +147,8 @@ sql_escape_string (char *s)
 #if     (defined USE_ODBC || defined USE_MYSQL)
 st_sql_t *
 sql_open (const char *host, int port,
-          const char *db, const char *user,
-          const char *password, int flags)
+          const char *user, const char *password,
+          const char *db_name, int flags)
 {
   static st_sql_t sql;
 
@@ -104,42 +162,59 @@ sql_open (const char *host, int port,
 
 #ifdef  USE_MYSQL
   if (flags & SQL_MYSQL)
-    return sql_mysql_open (&sql, host, port, db, user, password);
+    return sql_mysql_open (&sql, host, port, user, password, db_name);
 #endif
 #ifdef  USE_ODBC
   if (flags & SQL_ODBC)
-    return sql_odbc_open (&sql, host, port, db, user, password);
+    return sql_odbc_open (&sql, host, port, user, password, db_name);
 #endif
 
   return NULL;
 }
 
-int
-sql_query (st_sql_t *sql, const char *query)
+
+const char ***
+sql_read (st_sql_t *sql)
 {
 #ifdef  USE_MYSQL
   if (sql->flags & SQL_MYSQL)
-    return sql_mysql_query (sql, query);
+    return sql_mysql_read (sql);
 #endif
 #ifdef  USE_ODBC
   if (sql->flags & SQL_ODBC)
-    return sql_odbc_query (sql, query);
+    return sql_odbc_read (sql);
 #endif
 
   return 0;
 }
 
 
-char *
-sql_gets (st_sql_t *sql, char *buf, int buf_len)
+const char **
+sql_getrow (st_sql_t *sql, int row)
 {
 #ifdef  USE_MYSQL
   if (sql->flags & SQL_MYSQL)
-    return sql_mysql_gets (sql, buf, buf_len);
+    return sql_mysql_getrow (sql, row);
 #endif
 #ifdef  USE_ODBC
   if (sql->flags & SQL_ODBC)
-    return sql_odbc_gets (sql, buf, buf_len);
+    return sql_odbc_getrow (sql, row);
+#endif
+
+  return 0;
+}
+
+
+int
+sql_write (st_sql_t *sql, const char *sql_statement)
+{
+#ifdef  USE_MYSQL
+  if (sql->flags & SQL_MYSQL)
+    return sql_mysql_write (sql, sql_statement);
+#endif
+#ifdef  USE_ODBC
+  if (sql->flags & SQL_ODBC)
+    return sql_odbc_write (sql, sql_statement);
 #endif
 
   return 0;
@@ -167,13 +242,37 @@ sql_close (st_sql_t *sql)
 int
 main (int argc, char *argv[])
 {
+  int i = 0, j = 0;
   st_sql_t *sql = NULL;
+  const char **row = NULL;
 
-  if (!(sql = sql_open ("localhost", 3306, "mysql", "root", "", SQL_MYSQL)))
+  if (!(sql = sql_open ("localhost", 3306, "root", "nb", "mysql", SQL_MYSQL)))
     return -1;
 
-  sql_query (sql, "SELECT * FROM user");
-  sql_query (sql, "SELECT * FROM user");
+  sql_write (sql, "SELECT * FROM user");
+  for (i = 0; (row = (const char **) sql_getrow (sql, i)); i++)
+    {
+      for (j = 0; row[j]; j++)
+        printf ("\"%s\" ", row[j]);
+      printf ("\n");
+    }
+  
+  sql_write (sql, "SELECT * FROM user");
+  row = (const char **) sql_getrow (sql, 2);
+  if (row)
+    {
+      for (j = 0; row[j]; j++)
+        printf ("\"%s\" ", row[j]);
+      printf ("\n");
+    }
+  
+  sql_write (sql, "SELECT * FROM user WHERE user = 'root'");
+  for (i = 0; (row = (const char **) sql_getrow (sql, i)); i++)
+    {
+      for (j = 0; row[j]; j++)
+        printf ("\"%s\" ", row[j]);
+      printf ("\n");
+    }
   
   sql_close (sql);
 

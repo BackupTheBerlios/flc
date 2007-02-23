@@ -32,6 +32,9 @@
 #ifdef  USE_MYSQL
 #include <mysql/mysql.h>
 #endif  // USE_MYSQL
+#ifdef  USE_PGSQL
+//#include <libpq-fe.h>
+#endif
 
 
 typedef struct
@@ -51,44 +54,50 @@ typedef struct
   MYSQL_RES *res;               /* To be used to fetch information into */
   MYSQL_ROW row;
 #endif  // USE_MYSQL
+
+  const char *array[1024][1024];
 } st_sql_t;
 #endif  // #if     (defined USE_ODBC || defined USE_MYSQL)
 
 
 /*
-  sql_open()  open connection to db
+  sql_open()   open connection to db
 
   Flags
     SQL_MYSQL
     SQL_ODBC
+// TODO: SQL_PGSQL
 
-  sql_close() close connection
+  sql_close()  close connection
 
-  sql_ctrl()  send query to db
+  sql_read()   read array of rows from db
+  sql_getrow() get a single row from db
+  sql_write()  send query to db
 
-  sql_gets()  read query result (ascii, lines)
-
-  sql_escape_string() remove possible SQL Injection attacks
-                        from a string
+  sql_stresc() remove possible SQL Injection attacks
+                 from a string
 */
 #if     (defined USE_ODBC || defined USE_MYSQL)
 #define SQL_ODBC  (1<<0)
 #define SQL_MYSQL (1<<1)
+//#define SQL_PGSQL (1<<2)
 
 
 extern st_sql_t * sql_open (const char *host, int port,
-                            const char *db, const char *user,
-                            const char *password, int flags);
+                            const char *user, const char *password,
+                            const char *db_name, int flags);
 
-extern int sql_query (st_sql_t *sql, const char *query);
-
-extern char *sql_gets (st_sql_t *sql, char *buf, int buf_len);
+extern const char ***sql_read (st_sql_t *sql);
+extern const char **sql_getrow (st_sql_t *sql, int row);
+extern int sql_write (st_sql_t *sql, const char *sql_statement);
 
 extern int sql_close (st_sql_t *sql);
+
+
 #endif  // #if     (defined USE_ODBC || defined USE_MYSQL)
 
 
-extern char *sql_escape_string (char *s);
+extern char *sql_stresc (char *s);
 
 
 #endif  // MISC_SQL_H

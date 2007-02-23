@@ -84,18 +84,18 @@ int
 main (int argc, char *argv[])
 {
 #if     FILENAME_MAX > MAXBUFSIZE
-  char path[FILENAME_MAX];
+//  char path[FILENAME_MAX];
 #else
-  char path[MAXBUFSIZE];
+//  char path[MAXBUFSIZE];
 #endif
   char short_options[ARGS_MAX];
   struct option long_only_options[ARGS_MAX];
-  uint32_t flags = 0;
+//  uint32_t flags = 0;
   int x = 0, c;
   FILE *fh = NULL;
   int option_index = 0;
   int result = 0;
-  const st_getopt2_t *p = NULL;
+//  const st_getopt2_t *p = NULL;
   st_property_t props[] = {
     {
       "lha_test", "lha t \"%s\"",
@@ -316,16 +316,11 @@ main (int argc, char *argv[])
       exit (-1);
     }
 
-#warning tmpnam2 is deprecated
-  if (tmpnam2 (path))
+  strcpy (flc.temp, "flc");
+  if (!tmpnam3 (flc.temp, 1))
     {
-      realpath2 (path, flc.temp);
-
-      if (mkdir (flc.temp, S_IRUSR|S_IWUSR) == -1)
-        {
-          fprintf (stderr, "ERROR: could not create %s\n", flc.temp);
-          exit (-1);
-        }
+      fputs ("ERROR: could not create temp dir\n", stderr);
+      exit (-1);
     }
 
   flc.files = 0;

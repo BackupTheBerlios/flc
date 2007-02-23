@@ -40,6 +40,25 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #endif
 
 
+#define FILTER_BUILD(name,id,d,o,c,r,w,s,ctrl,i,q) \
+st_filter_t name##_filter \
+  { \
+    id, \
+    NULL, \
+    NULL, \
+    NULL, \
+    (int (*) (void *)) d; \
+    (int (*) (void *)) o; \
+    (int (*) (void *)) c; \
+    (int (*) (void *)) r; \
+    (int (*) (void *)) w; \
+    (int (*) (void *)) s; \
+    (int (*) (void *)) ctrl; \
+    (int (*) (void *)) i; \
+    (int (*) (void *)) q; \
+  };
+
+
 /*
   st_filter_t
   Single filter struct
