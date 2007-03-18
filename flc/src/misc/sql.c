@@ -36,7 +36,7 @@
 #include "sql.h"
 
 
-//#warning fix this!
+#warning fix this!
 #if     (defined USE_ODBC || defined USE_MYSQL)
 int
 sql_free_array (st_sql_t *sql)
